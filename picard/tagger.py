@@ -389,19 +389,14 @@ class Tagger(QtWidgets.QApplication):
             del self._cmdline_files
 
     def run(self):
-        self.update_browser_integration()
+        config = get_config()
+        if config.setting["browser_integration"]:
+            self.browser_integration.start()
         self.window.show()
         QtCore.QTimer.singleShot(0, self._run_init)
         res = self.exec_()
         self.exit()
         return res
-
-    def update_browser_integration(self):
-        config = get_config()
-        if config.setting["browser_integration"]:
-            self.browser_integration.start()
-        else:
-            self.browser_integration.stop()
 
     def event(self, event):
         if isinstance(event, thread.ProxyToMainEvent):

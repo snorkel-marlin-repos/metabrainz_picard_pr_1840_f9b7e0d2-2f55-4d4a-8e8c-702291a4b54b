@@ -45,7 +45,6 @@ from picard import (
     PICARD_VERSION_STR,
     log,
 )
-from picard.browser import addrelease
 from picard.config import get_config
 from picard.util import mbid_validate
 from picard.util.thread import to_main
@@ -97,10 +96,6 @@ class BrowserIntegration(QtCore.QObject):
         if not self.server:
             return 0
         return self.server.server_address[1]
-
-    @property
-    def is_running(self):
-        return self.server is not None
 
     def start(self):
         if self.server:
@@ -176,8 +171,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._load_mbid('album', args)
         elif action == '/opennat':
             self._load_mbid('nat', args)
-        elif action == '/add' and addrelease.is_available():
-            self._add_release(args)
         else:
             self._response(404, 'Unknown action.')
 
@@ -193,22 +186,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self._response(400, 'Missing parameter "id".')
 
-    def _add_release(self, args):
-        if 'token' in args and args['token']:
-            try:
-                content = addrelease.serve_form(args['token'][0])
-                self._response(200, content, 'text/html')
-            except addrelease.NotFoundError as err:
-                self._response(404, str(err))
-            except addrelease.InvalidTokenError:
-                self._response(400, 'Invalid token')
-        else:
-            self._response(400, 'Missing parameter "token".')
-
-    def _response(self, code, content='', content_type='text/plain'):
+    def _response(self, code, content=''):
         self.server_version = SERVER_VERSION
         self.send_response(code)
-        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Type', 'text/plain')
         self.send_header('Cache-Control', 'max-age=0')
         origin = self.headers['origin']
         if _is_valid_origin(origin):
